@@ -12,8 +12,8 @@ from scraper.public_scraper import PublicScraper
 # --- API Setup ---
 app = FastAPI(
     title="Public Data Scraper API",
-    description="An API to scrape Google Search results and website content using residential proxies.",
-    version="1.0.0",
+    description="An API to scrape Search Engine results and website content using residential proxies.",
+    version="1.0.1",
 )
 
 
@@ -35,7 +35,7 @@ PROXY_PASS = os.environ.get("PROXY_PASS")
 def run_scrape_task(query: str, num_results: int):
     """
     Initializes the scraper and runs the full process:
-    1. Scrapes Google Search results.
+    1. Scrapes Search Engine results.
     2. Scrapes the content of each resulting URL.
     """
     print("Scrape task started...")
@@ -54,8 +54,9 @@ def run_scrape_task(query: str, num_results: int):
         driver = uc.Chrome(options=options, headless=True, use_subprocess=False)
         scraper = PublicScraper(driver)
 
-        # 1. Scrape Google SERP
-        serp_results = scraper.scrape_google_serp(query, num_results)
+        # --- THE FIX IS HERE ---
+        # Call the correct function name: scrape_serp
+        serp_results = scraper.scrape_serp(query, num_results)
 
         # 2. For each result, scrape the content of the page
         scraped_data = []
@@ -73,7 +74,7 @@ def run_scrape_task(query: str, num_results: int):
 
     except Exception as e:
         print(f"An error occurred during the scrape task: {e}")
-        raise  # Re-raise the exception to be caught by the endpoint
+        raise
     finally:
         if driver:
             driver.quit()
@@ -84,7 +85,7 @@ def run_scrape_task(query: str, num_results: int):
 @app.post("/scrape-public")
 async def start_scraping(request: ScrapeRequest, x_api_key: str = Header(None)):
     """
-    Accepts a search query and scrapes Google and the resulting websites.
+    Accepts a search query and scrapes the search engine and the resulting websites.
     """
     if x_api_key != SECRET_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API Key")
