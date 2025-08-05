@@ -10,7 +10,7 @@ from trafilatura import extract
 
 class PublicScraper:
     """
-    Scrapes Search Engine Results Pages (SERP) from DuckDuckGo and website content.
+    Scrapes Search Engine Results Pages (SERP) from the main DuckDuckGo website.
     """
 
     def __init__(self, driver):
@@ -18,24 +18,28 @@ class PublicScraper:
 
     def scrape_serp(self, query: str, num_results: int = 10):
         """Scrapes the top search results for a given query from DuckDuckGo."""
-        print(f"Scraping DuckDuckGo for query: '{query}'")
+        print(f"Scraping main DuckDuckGo site for query: '{query}'")
         
-        # --- CHANGE 1: Use DuckDuckGo's simple HTML search URL ---
+        # --- CHANGE 1: Use the main DuckDuckGo URL ---
         encoded_query = urllib.parse.quote_plus(query)
-        search_url = f"https://html.duckduckgo.com/html/?q={encoded_query}"
+        search_url = f"https://duckduckgo.com/?q={encoded_query}"
         self.driver.get(search_url)
 
         results = []
         try:
-            # --- CHANGE 2: Use DuckDuckGo's stable selectors ---
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.result"))
+            # --- CHANGE 2: Use the selectors for the main JS site ---
+            # Wait for the main results container with id="links"
+            WebDriverWait(self.driver, 15).until(
+                EC.presence_of_element_located((By.ID, "links"))
             )
-            search_results = self.driver.find_elements(By.CSS_SELECTOR, "div.result")
+            
+            # Find all the individual result articles
+            search_results = self.driver.find_elements(By.CSS_SELECTOR, "article[data-testid='result']")
 
             for result in search_results[:num_results]:
                 try:
-                    link_element = result.find_element(By.CSS_SELECTOR, "a.result__a")
+                    # The title and URL are within the same <a> tag inside an <h2>
+                    link_element = result.find_element(By.CSS_SELECTOR, "h2 > a")
                     url = link_element.get_attribute("href")
                     title = link_element.text
 
