@@ -1,4 +1,5 @@
 import time
+import urllib.parse
 
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
@@ -9,49 +10,41 @@ from trafilatura import extract
 
 class PublicScraper:
     """
-    Scrapes Google Search Engine Results Pages (SERP) and website content.
+    Scrapes Search Engine Results Pages (SERP) from DuckDuckGo and website content.
     """
 
     def __init__(self, driver):
         self.driver = driver
 
-    def scrape_google_serp(self, query: str, num_results: int = 10):
-        """Scrapes the top search results for a given query."""
-        print(f"Scraping Google for query: '{query}'")
-        search_url = f"https://www.google.com/search?q={query}&num={num_results}"
+    def scrape_serp(self, query: str, num_results: int = 10):
+        """Scrapes the top search results for a given query from DuckDuckGo."""
+        print(f"Scraping DuckDuckGo for query: '{query}'")
+        
+        # --- CHANGE 1: Use DuckDuckGo's simple HTML search URL ---
+        encoded_query = urllib.parse.quote_plus(query)
+        search_url = f"https://html.duckduckgo.com/html/?q={encoded_query}"
         self.driver.get(search_url)
 
         results = []
         try:
-            # --- UPDATED SELECTOR ---
-            # Wait for the main search results container to be present.
-            # This is a more stable selector than individual result items.
+            # --- CHANGE 2: Use DuckDuckGo's stable selectors ---
             WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.ID, "search"))
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.result"))
             )
-            
-            # --- UPDATED SELECTOR ---
-            # Find all the individual search result blocks. Google now often uses this class.
-            search_results = self.driver.find_elements(By.CSS_SELECTOR, "div.MjjYud")
+            search_results = self.driver.find_elements(By.CSS_SELECTOR, "div.result")
 
             for result in search_results[:num_results]:
                 try:
-                    link_element = result.find_element(By.CSS_SELECTOR, "a")
+                    link_element = result.find_element(By.CSS_SELECTOR, "a.result__a")
                     url = link_element.get_attribute("href")
-
-                    title_element = result.find_element(By.CSS_SELECTOR, "h3")
-                    title = title_element.text
+                    title = link_element.text
 
                     if url and title:
                         results.append({"title": title, "url": url})
                 except NoSuchElementException:
-                    # This handles ads or other non-standard result types
                     continue
         except TimeoutException:
-            # --- BETTER DEBUGGING ---
-            # If the wait fails, print the page title to see if it's a CAPTCHA page.
             print(f"ERROR: Timed out waiting for search results. The page title is: '{self.driver.title}'")
-            print("This likely means Google is showing a CAPTCHA page.")
         except Exception as e:
             print(f"An unexpected error occurred while scraping SERP: {e}")
 
