@@ -1,0 +1,17 @@
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Output files from the scraper
+*.csv
+*.png
+*.html
+*.zip
+
+# Environment files (good practice)
+.env
+
+# IDE/Editor specific files
+.vscode/
+.idea/

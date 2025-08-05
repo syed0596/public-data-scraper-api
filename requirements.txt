@@ -1,0 +1,8 @@
+fastapi
+pydantic
+python-dotenv
+selenium
+setuptools
+trafilatura
+undetected-chromedriver
+uvicorn[standard]
